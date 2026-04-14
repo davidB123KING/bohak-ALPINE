@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  --background: #060d13;
+  --foreground: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Glowing green text for the main title */
+.glow-text {
+  color: #00ff88;
+  text-shadow:
+    0 0 10px #00ff8866,
+    0 0 30px #00ff8844,
+    0 0 60px #00ff8822;
+}
+
+/* Scrolling ticker tape */
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-track {
+  animation: ticker-scroll 35s linear infinite;
+  width: max-content;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
