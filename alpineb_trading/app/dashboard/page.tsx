@@ -13,6 +13,16 @@ export default async function DashboardPage() {
     .eq("id", user.id)
     .single();
 
+  const { count: postCount } = await supabase
+    .from("posts")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  const { count: replyCount } = await supabase
+    .from("replies")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
   const displayName = profile?.full_name ?? user.email ?? "Trader";
 
   return (
@@ -29,8 +39,8 @@ export default async function DashboardPage() {
 
       {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <StatCard label="Objave" value="0" icon="post" />
-        <StatCard label="Sledilci" value="0" icon="users" />
+        <StatCard label="Objave" value={String(postCount ?? 0)} icon="post" />
+        <StatCard label="Odgovori" value={String(replyCount ?? 0)} icon="users" />
         <StatCard label="Strategije" value="0" icon="chart" />
       </div>
 

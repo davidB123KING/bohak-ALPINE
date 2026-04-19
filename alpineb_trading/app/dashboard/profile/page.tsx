@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { updateProfile } from "@/app/actions/profile";
 import { createClient } from "@/lib/supabase/client";
 import type { ProfileState } from "@/app/actions/profile";
@@ -16,7 +17,18 @@ type Profile = {
   created_at: string | null;
 };
 
-function AvatarPlaceholder({ name }: { name: string }) {
+function Avatar({ name, url }: { name: string; url: string | null }) {
+  if (url) {
+    return (
+      <Image
+        src={url}
+        alt={name}
+        width={80}
+        height={80}
+        className="w-20 h-20 rounded-full object-cover border-2 border-[#00ff88]/30"
+      />
+    );
+  }
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -35,46 +47,74 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const supabaseRef = useRef(createClient());
+
+  async function loadProfile() {
+    const supabase = supabaseRef.current;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    setEmail(user.email ?? "");
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, username, bio, website, avatar_url, created_at")
+      .eq("id", user.id)
+      .single();
+    setProfile(data ?? {
+      full_name: user.user_metadata?.full_name ?? "",
+      username: null, bio: null, website: null, avatar_url: null, created_at: null,
+    });
+    setLoading(false);
+  }
+
+  useEffect(() => { loadProfile(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setEmail(user.email ?? "");
+    if (state.success) loadProfile();
+  }, [state.success]); // eslint-disable-line react-hooks/exhaustive-deps
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, username, bio, website, avatar_url, created_at")
-        .eq("id", user.id)
-        .single();
-
-      setProfile(data ?? {
-        full_name: user.user_metadata?.full_name ?? "",
-        username: null, bio: null, website: null, avatar_url: null, created_at: null,
-      });
-      setLoading(false);
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError("Slika mora biti manjša od 2 MB.");
+      return;
     }
-    load();
-  }, []);
+    setUploadError(null);
+    setUploading(true);
+    const supabase = supabaseRef.current;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setUploading(false); return; }
 
-  // Posodobi lokalni profil ko je shranjevanje uspešno
-  useEffect(() => {
-    if (state.success) {
-      async function reload() {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data } = await supabase
-          .from("profiles")
-          .select("full_name, username, bio, website, avatar_url, created_at")
-          .eq("id", user.id)
-          .single();
-        if (data) setProfile(data);
-      }
-      reload();
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true });
+
+    if (uploadErr) {
+      setUploadError("Napaka pri nalaganju: " + uploadErr.message);
+      setUploading(false);
+      return;
     }
-  }, [state.success]);
+
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+
+    const { error: updateErr } = await supabase
+      .from("profiles")
+      .update({ avatar_url: publicUrl })
+      .eq("id", user.id);
+
+    if (updateErr) {
+      setUploadError("Napaka pri shranjevanju URL-ja: " + updateErr.message);
+    } else {
+      setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : prev);
+    }
+    setUploading(false);
+  }
 
   if (loading) {
     return (
@@ -93,11 +133,41 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <AvatarPlaceholder name={displayName} />
+        <div className="relative group">
+          <Avatar name={displayName} url={profile?.avatar_url ?? null} />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+        </div>
         <div>
           <h1 className="text-xl font-bold text-white">{displayName}</h1>
           <p className="text-white/40 text-sm">{email}</p>
           {joinDate && <p className="text-white/30 text-xs mt-1">Član od {joinDate}</p>}
+          {uploading && <p className="text-[#00ff88] text-xs mt-1">Nalagam sliko...</p>}
+          {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="text-white/30 text-xs mt-1 hover:text-[#00ff88] transition-colors"
+          >
+            Spremeni profilno sliko
+          </button>
         </div>
       </div>
 

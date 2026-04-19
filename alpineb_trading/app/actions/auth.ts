@@ -88,3 +88,43 @@ export async function logout() {
   revalidatePath("/", "layout");
   redirect("/");
 }
+
+export async function forgotPassword(
+  _prevState: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const supabase = await createClient();
+  const email = (formData.get("email") as string)?.trim();
+
+  if (!email) return { error: "Vnesite email naslov." };
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/reset-password`,
+  });
+
+  if (error) return { error: error.message };
+
+  return { success: "Povezava za reset gesla je bila poslana na vaš email." };
+}
+
+export async function resetPassword(
+  _prevState: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const supabase = await createClient();
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!password || !confirmPassword) return { error: "Vsa polja so obvezna." };
+  if (password.length < 8) return { error: "Geslo mora imeti vsaj 8 znakov." };
+  if (password !== confirmPassword) return { error: "Gesli se ne ujemata." };
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
+}

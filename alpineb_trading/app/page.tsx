@@ -122,14 +122,9 @@ export default function Home() {
 
         <div className="hidden md:flex items-center gap-8 text-sm text-white/70">
           <Link href="/forum" className="hover:text-white transition-colors">Forum</Link>
-          <a href="#" className="hover:text-white transition-colors">Strategies</a>
-          <a href="#" className="hover:text-white transition-colors">Education</a>
-          <div className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-            <span>Resources</span>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
+          <Link href="/strategies" className="hover:text-white transition-colors">Strategies</Link>
+          <Link href="/dashboard/education" className="hover:text-white transition-colors">Education</Link>
+          <Link href="/dashboard/resources" className="hover:text-white transition-colors">Resources</Link>
         </div>
 
         {user ? (
@@ -166,15 +161,15 @@ export default function Home() {
         </p>
 
         <div className="flex items-center gap-4 mb-20">
-          <button className="bg-[#00ff88] text-black font-bold px-8 py-3 rounded text-sm tracking-widest uppercase hover:bg-[#00e87a] transition-colors shadow-[0_0_20px_#00ff8844]">
+          <Link href="/auth/register" className="bg-[#00ff88] text-black font-bold px-8 py-3 rounded text-sm tracking-widest uppercase hover:bg-[#00e87a] transition-colors shadow-[0_0_20px_#00ff8844]">
             Join the Community
-          </button>
-          <button className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors">
-            Learn More
+          </Link>
+          <Link href="/strategies" className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors">
+            Explore Strategies
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </button>
+          </Link>
         </div>
 
         {/* Stats */}
