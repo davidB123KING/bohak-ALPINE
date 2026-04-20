@@ -22,13 +22,24 @@ export async function createStrategy(
   const category    = (formData.get("category")    as string) ?? "swing";
   const timeframe   = (formData.get("timeframe")   as string) ?? "1d";
   const asset_class = (formData.get("asset_class") as string) ?? "general";
+  const tv_symbol   = (formData.get("tv_symbol")   as string)?.trim().toUpperCase() || null;
 
-  if (!title || title.length < 5)       return { error: "Naslov mora imeti vsaj 5 znakov." };
+  if (!title || title.length < 5)              return { error: "Naslov mora imeti vsaj 5 znakov." };
   if (!description || description.length < 20) return { error: "Opis mora imeti vsaj 20 znakov." };
+
+  // Image URLs uploaded client-side, passed as hidden inputs
+  const imageUrls = (formData.getAll("images") as string[]).filter(
+    (v) => typeof v === "string" && v.startsWith("https://")
+  );
 
   const { data, error } = await supabase
     .from("strategies")
-    .insert({ user_id: user.id, title, description, entry_rules, exit_rules, risk_mgmt, category, timeframe, asset_class })
+    .insert({
+      user_id: user.id,
+      title, description, entry_rules, exit_rules, risk_mgmt,
+      category, timeframe, asset_class, tv_symbol,
+      images: imageUrls.length > 0 ? imageUrls : null,
+    })
     .select("id")
     .single();
 
