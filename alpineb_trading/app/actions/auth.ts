@@ -22,7 +22,7 @@ export async function login(
     return { error: "Vnesite email in geslo." };
   }
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     if (error.message.includes("Invalid login credentials")) {
@@ -34,8 +34,14 @@ export async function login(
     return { error: error.message };
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", signInData.user.id)
+    .single();
+
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect(profile?.is_admin ? "/admin" : "/dashboard");
 }
 
 export async function register(
