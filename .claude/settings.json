@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import docx; print\\('ok'\\)\")",
+      "Bash(python3 -m pip install python-docx)",
+      "Bash(python3 -c \"from docx import Document; print\\('ok'\\)\")",
+      "Bash(python3 \"C:\\\\Users\\\\DavidBohak\\\\Downloads\\\\generate_manual.py\")",
+      "Bash(python3 -c \"import playwright; print\\('playwright ok'\\)\")",
+      "Bash(python3 -m pip install playwright)",
+      "Bash(python3 -m playwright install chromium)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(python3 \"C:\\\\Users\\\\DavidBohak\\\\Downloads\\\\generate_manual_with_screenshots.py\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\DavidBohak\\Downloads"
+    ]
+  }
+}

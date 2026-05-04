@@ -30,19 +30,25 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  function redirectWithCookies(pathname: string) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    const res = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      res.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return res;
+  }
+
   // Zaščiti /dashboard — brez prijave preusmeri na login
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+    return redirectWithCookies("/auth/login");
   }
 
   // Zaščiti /admin — samo admin uporabniki
   if (request.nextUrl.pathname.startsWith("/admin")) {
     if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
-      return NextResponse.redirect(url);
+      return redirectWithCookies("/auth/login");
     }
     const { data: profile } = await supabase
       .from("profiles")
@@ -50,9 +56,7 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .single();
     if (!profile?.is_admin) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
+      return redirectWithCookies("/dashboard");
     }
   }
 
@@ -62,9 +66,7 @@ export async function proxy(request: NextRequest) {
     (request.nextUrl.pathname.startsWith("/auth/login") ||
       request.nextUrl.pathname.startsWith("/auth/register"))
   ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return redirectWithCookies("/dashboard");
   }
 
   return supabaseResponse;

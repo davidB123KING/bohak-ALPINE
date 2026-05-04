@@ -3,7 +3,12 @@
     "allow": [
       "Bash(npm run:*)",
       "Bash(echo \"Started PID $!\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\DavidBohak\\\\Downloads\\\\bohak-ALPINE\\\\alpineb_trading\\\\app\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(python -c \"import docx; print\\('python-docx ok'\\)\")",
+      "Bash(pip install *)"
     ]
   }
 }
